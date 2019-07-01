@@ -10,29 +10,23 @@ import {
   TouchableOpacity,
   ScrollView
 } from 'react-native';
+import { TouchableHighlight } from 'react-native-gesture-handler';
+import { white } from 'ansi-colors';
 
 const { width, height } = Dimensions.get('screen');
 
 export default class App extends React.Component {
   constructor() {
     super();
+
     this.state = {
       seats: [],
       array: [],
       groupRowLength: 0,
       pessengerCount: 0,
-      seatGroupLength: [],
-      modalInputGroup: true,
-      modalInputRowCol: false
+      seatGroupLength: [0, 1, 2, 3],
+      modalInputRowCol: true
     };
-  }
-
-  componentDidMount() {
-    const rArray = [];
-    for (var i = 0; i < this.state.array.length; i++) {
-      rArray.push(this.state.array[i].reverse());
-    }
-    this.setState({ array: rArray });
   }
 
   fillWithMAandW() {
@@ -65,7 +59,7 @@ export default class App extends React.Component {
     for (var i = 0; i < colSize; i++) {
       for (var j = 0; j < rowSize; j++) {
         if (seats[j] == null || seats[j][i] == null) continue;
-        for (k = 0; k < seats[j][i].length; k++) {
+        for (var k = 0; k < seats[j][i].length; k++) {
           if (
             counter < this.state.pessengerCount + 1 &&
             seats[j] != null &&
@@ -154,50 +148,6 @@ export default class App extends React.Component {
     );
   }
 
-  setSeatGroupLength() {
-    const { groupRowLength } = this.state;
-    console.log(groupRowLength);
-    if (groupRowLength !== '' && Number.isInteger(groupRowLength)) {
-      const arr = [];
-      if (groupRowLength == 0) return this.setState({ seatGroupLength: [] });
-      for (var i = 0; i < groupRowLength; i++) {
-        arr.push(i);
-      }
-      this.setState({
-        seatGroupLength: arr,
-        modalInputGroup: false,
-        modalInputRowCol: true
-      });
-    } else {
-      alert('Input cannot empty or must be number');
-    }
-  }
-
-  renderModalGroupRow() {
-    return (
-      <Modal visible={this.state.modalInputGroup} transparent={true} style={{}}>
-        <View style={styles.modalBackground}>
-          <View style={styles.modalGroupRow}>
-            <Text>Input number of rows of group seats : </Text>
-
-            <TextInput
-              onChangeText={text =>
-                this.setState({ groupRowLength: parseInt(text) })
-              }
-              placeholder={'0'}
-              style={styles.textInput}
-            />
-            <Button
-              onPress={() => this.setSeatGroupLength()}
-              title="Next"
-              color="#841584"
-            />
-          </View>
-        </View>
-      </Modal>
-    );
-  }
-
   createArraySeat(text, i) {
     const { array } = this.state;
     const arrHolder = this.state.array;
@@ -221,51 +171,42 @@ export default class App extends React.Component {
 
   renderModalRowCol() {
     return (
-      <Modal
-        visible={this.state.modalInputRowCol}
-        transparent={true}
-        style={{}}
-      >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalRowColContainer}>
-            <View
-              style={{
-                width: '100%',
-                top: -15,
-                left: -15,
-                alignItems: 'flex-start'
-              }}
-            >
-              <Button title="< Back" onPress={() => this.backPress()} />
-            </View>
-            <ScrollView>
-              {this.state.seatGroupLength.map((item, i) => (
-                <View style={{ padding: 5 }} key={i}>
-                  <Text>Row {i + 1}: </Text>
-                  <View style={{ flexDirection: 'row', padding: 2 }}>
-                    <Text>Row,Col : </Text>
-                    <TextInput
-                      onChangeText={text => this.createArraySeat(text, i)}
-                      placeholder={'0,0'}
-                      style={{ width: '20%', height: 20 }}
-                    />
-                  </View>
+      <View style={styles.modalBackground}>
+        <View style={styles.modalRowColContainer}>
+          <ScrollView>
+            {this.state.seatGroupLength.map((item, i) => (
+              <View style={{ padding: 5 }} key={i}>
+                <Text>Row {i + 1}: </Text>
+                <View style={{ flexDirection: 'row', padding: 2 }}>
+                  <Text>Row,Col : </Text>
+                  <TextInput
+                    keyboardType="decimal-pad"
+                    blurOnSubmit={false}
+                    returnKeyType={
+                      i === this.state.seatGroupLength ? 'go' : 'next'
+                    }
+                    autoFocus={i === 0 ? true : false}
+                    onChangeText={text => this.createArraySeat(text, i)}
+                    placeholder={'0,0'}
+                    style={{ width: '20%', height: 20 }}
+                  />
                 </View>
-              ))}
-            </ScrollView>
+              </View>
+            ))}
+          </ScrollView>
 
-            <Text styles={{ marginTop: 10 }}>
-              *Input must be Array 2D, eg : 3,4
-            </Text>
+          <Text styles={{ marginTop: 10 }}>
+            *Input must be Array 2D, eg : 3,4
+          </Text>
 
-            <Button
-              onPress={() => this.clickCreateSeats()}
-              title="Create Seats"
-              color="#841584"
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.btn}
+            onPress={() => this.clickCreateSeats()}
+          >
+            <Text style={styles.btnText}>Create Seats</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </View>
     );
   }
 
@@ -274,18 +215,9 @@ export default class App extends React.Component {
     this.fillWithMAandW();
   }
 
-  backPress() {
-    this.setState({
-      modalInputGroup: true,
-      modalInputRowCol: false
-    });
-  }
-
   render() {
     return (
       <View style={styles.container}>
-        {this.renderModalGroupRow()}
-        {this.renderModalRowCol()}
         <View style={{ width: '90%', alignItems: 'center' }}>
           <Text style={{ fontSize: 18 }}>Input Pessenger Count : </Text>
           <TextInput
@@ -304,6 +236,21 @@ export default class App extends React.Component {
         <View style={styles.seatsContainer}>
           {this.state.seats.map((item, i) => this.renderSeats(item, i))}
         </View>
+
+        <TouchableOpacity
+          style={{
+            paddingVertical: 5,
+            paddingHorizontal: 10,
+            marginTop: 'auto',
+            bottom: 20,
+            backgroundColor: 'orange',
+            borderRadius: 5
+          }}
+          onPress={() => this.setState({ modalInputRowCol: true })}
+        >
+          <Text style={styles.btnText}>Reset</Text>
+        </TouchableOpacity>
+        {this.state.modalInputRowCol ? this.renderModalRowCol() : null}
       </View>
     );
   }
@@ -318,9 +265,9 @@ const styles = StyleSheet.create({
   },
   modalRowColContainer: {
     backgroundColor: 'white',
-    height: '80%',
+    height: '50%',
     width: '80%',
-    alignSelf: 'center',
+
     elevation: 3,
     shadowColor: '#000000',
     shadowOffset: {
@@ -330,32 +277,20 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOpacity: 0.2,
     borderRadius: 10,
-    padding: 20
+    padding: 20,
+    marginBottom: 100
   },
-  modalGroupRow: {
-    backgroundColor: 'white',
-    height: '20%',
-    width: '80%',
-    alignSelf: 'center',
-    elevation: 3,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 3
-    },
-    shadowRadius: 3,
-    shadowOpacity: 0.2,
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 20
-  },
+
   seatsContainer: {
     marginTop: 100,
     flexDirection: 'row',
     justifyContent: 'space-around'
   },
   modalBackground: {
-    flex: 1,
+    top: -40,
+    width: width,
+    height: height,
+    position: 'absolute',
     backgroundColor: 'rgba(0,0,0,.7)',
     alignItems: 'center',
     justifyContent: 'center'
@@ -365,6 +300,18 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 24,
     width: '50%',
+    textAlign: 'center'
+  },
+  btn: {
+    marginTop: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    backgroundColor: '#3498db',
+    borderRadius: 5
+  },
+  btnText: {
+    color: 'white',
+    fontWeight: 'bold',
     textAlign: 'center'
   }
 });
